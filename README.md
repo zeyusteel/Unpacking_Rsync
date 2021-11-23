@@ -1,2 +1,2 @@
 ## FILE RESTORE DEMO FOR KYSEC
-dependence: libtool
+dependence: libtool librsync-dev

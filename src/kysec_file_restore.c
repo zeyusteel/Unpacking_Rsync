@@ -4,6 +4,5 @@
 int main(int argc, char const *argv[])
 {
     printf("hello world");
-    test_func();
     return 0;
 }
