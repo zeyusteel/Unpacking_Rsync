@@ -5,22 +5,16 @@
 extern "C" {
 #endif
 
-//Error Number
-typedef enum EKYSEC_CODE {
-    KYSEC_SUCCESS   =   0,
-    KYSEC_ERROR     =   1
-}EKYSEC_CODE;
+extern int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2);
 
-//comdef
-#ifndef bool
-#define bool int
-#define true 1
-#define false 0
-#endif
+extern int kysec_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile); 
 
-extern int kysec_rs_sig_file(const char *oldFilePath, const char *sigFilePath, bool useBLAKE2);
+extern int kysec_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile);
 
-extern int kysec_rs_delta_file(const char *sigFilePath, const char *deltaFilePath, const char *newFilePath); 
+extern int kysec_file_sync(const char *origFile, const char *destFile);
+
+extern int kysec_file_copy(const char *origFile, const char *destFile);
+
 #ifdef __cplusplus
 }
 #endif

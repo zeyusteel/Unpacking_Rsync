@@ -4,3 +4,4 @@ echo this is test
 make clean
 make
 ./test/test_for_sync
+./test/test_for_file
