@@ -15,6 +15,10 @@ extern int kysec_file_sync(const char *origFile, const char *destFile);
 
 extern int kysec_file_copy(const char *origFile, const char *destFile);
 
+extern int kysec_file_stat_sync(const char *origFile, const char *destFile);
+
+extern int kysec_file_acl_sync(const char *origFile, const char *destFile);
+
 #ifdef __cplusplus
 }
 #endif
