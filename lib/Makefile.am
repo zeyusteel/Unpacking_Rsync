@@ -6,4 +6,5 @@ libkysec_file_restore_la_LIBADD = \
                         -lpthread \
                         -lrsync \
                         -lcrypto \
-                        -lacl
+                        -lacl \
+                        -lattr
