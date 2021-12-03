@@ -11,9 +11,9 @@ extern int kysec_rs_delta_file(const char *sigFile, const char *deltaFile, const
 
 extern int kysec_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile);
 
-extern int kysec_file_sync(const char *origFile, const char *destFile);
+extern int kysec_file_data_sync(const char *origFile, const char *destFile);
 
-extern int kysec_file_copy(const char *origFile, const char *destFile);
+extern int kysec_file_data_copy(const char *origFile, const char *destFile);
 
 extern int kysec_file_stat_sync(const char *origFile, const char *destFile);
 

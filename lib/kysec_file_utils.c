@@ -1,4 +1,4 @@
-#include "kysec_file_proxy.h"
+#include "kysec_file_utils.h"
 #include "kysec_file_comdef.h"
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ int kysec_get_file_md5(const char *fileName, unsigned char digest[16])
     return KYSEC_SUCCESS;
 } 
 
-void kysec_make_dir(const char *path)
+void kysec_make_dir(const char *path, int mode)
 {
 	if ((strcmp(path,".") == 0) || (strcmp(path,"/")==0)) {
 		return;
@@ -68,18 +68,18 @@ void kysec_make_dir(const char *path)
     } else {
 		char *dupPath = strdup(path);
 		const char *dirName = dirname(dupPath);
-		kysec_make_dir(dirName);
+		kysec_make_dir(dirName, mode);
 		free(dupPath);
 	}
 
-	if(mkdir(path,0777) < 0){
+	if(mkdir(path, mode) < 0){
 		printf("mkdir error!\n");
         return;
 	}
 	return;
 }
  
-int kysec_make_file(const char*fileName,int mode)
+int kysec_make_file(const char*fileName, int mode)
 {
 	if (access(fileName, F_OK) == 0) {
         printf("file exit!\n");
@@ -90,7 +90,7 @@ int kysec_make_file(const char*fileName,int mode)
 		if(errno == ENOENT){
 			char *dupFileName=strdup(fileName);
 			char *dir = dirname(dupFileName);
-			kysec_make_dir(dir);
+			kysec_make_dir(dir, 0777);
 			free(dupFileName);
 			creat(fileName,mode);
 		}

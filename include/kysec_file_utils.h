@@ -11,9 +11,9 @@ extern int kysec_file_md5_cmp(unsigned char disgest[16], unsigned char _disgest[
 
 extern int kysec_is_file_null(const char *fileName);
 
-extern void kysec_make_dir(const char *path);
+extern void kysec_make_dir(const char *path, int mode);
 
-extern int kysec_make_file(const char*fileName,int mode);
+extern int kysec_make_file(const char*fileName, int mode);
 
 #ifdef __cplusplus
 }

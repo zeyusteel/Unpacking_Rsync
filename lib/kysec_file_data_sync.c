@@ -1,5 +1,5 @@
 #include "kysec_file_restore.h"
-#include "kysec_file_proxy.h"
+#include "kysec_file_utils.h"
 #include "kysec_file_comdef.h"
 
 #include <stdio.h>
@@ -141,14 +141,14 @@ out:
     return rc;
 }
 
-int kysec_file_copy(const char *origFile, const char *destFile)
+int kysec_file_data_copy(const char *origFile, const char *destFile)
 {
     EKYSEC_CODE rc = KYSEC_SUCCESS;
     FILE *fpOrig = NULL, *fpTmpDest = NULL; 
     int fdTmp = 0;
     int len;
     char buf[BUF_SIZE] = {0};
-    char tmpDestFile[]  = "tmpFile_XXXXXX";
+    char tmpDestFile[]  = ".tmpFile_XXXXXX";
 
     if ((fdTmp = mkstemp(tmpDestFile)) == -1) {
         rc = KYSEC_ERROR;
@@ -189,12 +189,12 @@ out:
     return rc;
 }
 
-int kysec_file_sync(const char *origFile, const char *destFile)
+int kysec_file_data_sync(const char *origFile, const char *destFile)
 {
     EKYSEC_CODE rc = KYSEC_SUCCESS;
-    char sigFile[] = "sigFile_XXXXXX";
-    char deltaFile[] = "deltaFile_XXXXXX";
-    char tmpDestFile[] = "tmpDestFile_XXXXXX";
+    char sigFile[] = ".sigFile_XXXXXX";
+    char deltaFile[] = ".deltaFile_XXXXXX";
+    char tmpDestFile[] = ".tmpDestFile_XXXXXX";
 
     int fdSig = -1, fdDelta = -1, fdTmpDest = -1;
 

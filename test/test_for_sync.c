@@ -1,5 +1,5 @@
 #include "kysec_file_restore.h"
-#include "kysec_file_proxy.h"
+#include "kysec_file_utils.h"
 #include "kysec_file_comdef.h"
 
 #include <stdio.h>
@@ -39,11 +39,11 @@ int test_for_rsync()
 int main(int argc, char const *argv[])
 {
     int rc = 0;
-    rc = kysec_file_sync("/usr/sbin/kylin-log-viewer", "./test/test_dir/kk");
+    rc = kysec_file_data_sync("/usr/sbin/kylin-log-viewer", "./test/test_dir/kk");
 
     //test_for_rsync();
 
-    rc = kysec_file_copy(ORIG_FILE, DEST_FILE);
+    rc = kysec_file_data_copy(ORIG_FILE, DEST_FILE);
     printf("%d\n", rc);
 
     return 0;

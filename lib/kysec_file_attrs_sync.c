@@ -26,6 +26,12 @@ int kysec_file_stat_sync(const char *origFile, const char *destFile)
         goto out;
     }
 
+    if (!S_ISREG(st.st_mode)) {
+        perror("file type error");
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
     if ((rc = chmod(destFile, st.st_mode)) == -1) {
         perror("chmod:");        
         rc = KYSEC_ERROR;

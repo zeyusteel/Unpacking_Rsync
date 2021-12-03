@@ -9,10 +9,10 @@
 int main(int argc, char const *argv[])
 {
     int rc =  KYSEC_SUCCESS;
-    //rc = kysec_file_stat_sync(ORIG_FILE, DEST_FILE);
-    //rc = kysec_file_acl_sync(ORIG_FILE, DEST_FILE);
+    rc = kysec_file_acl_sync(ORIG_FILE, DEST_FILE);
+    rc = kysec_file_stat_sync(ORIG_FILE, DEST_FILE);
 
-    rc = kysec_file_attr_sync(ORIG_FILE, DEST_FILE);
+    //rc = kysec_file_attr_sync(ORIG_FILE, DEST_FILE);
 
     printf("%d\n", rc);
     return 0;
