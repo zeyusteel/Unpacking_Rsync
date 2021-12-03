@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+extern int kysec_check_hash(const char *origFile, const char *destFile);
+
 extern int kysec_get_file_md5(const char *fileName, unsigned char digest[16]);
 
 extern int kysec_file_md5_cmp(unsigned char disgest[16], unsigned char _disgest[16]);

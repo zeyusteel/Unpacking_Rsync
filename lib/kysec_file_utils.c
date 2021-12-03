@@ -57,6 +57,25 @@ int kysec_get_file_md5(const char *fileName, unsigned char digest[16])
     return KYSEC_SUCCESS;
 } 
 
+int kysec_check_hash(const char *origFile, const char *destFile)
+{
+    int rc;
+    unsigned char md[16] = {0};
+    unsigned char mdnew[16] = {0};
+    
+    rc = kysec_get_file_md5(origFile, md);
+    if (rc != KYSEC_SUCCESS) {
+        return rc;
+    }
+
+    rc = kysec_get_file_md5(destFile, mdnew);
+    if (rc != KYSEC_SUCCESS) {
+        return rc;
+    }
+
+    return kysec_file_md5_cmp(md, mdnew);
+}
+
 void kysec_make_dir(const char *path, int mode)
 {
 	if ((strcmp(path,".") == 0) || (strcmp(path,"/")==0)) {

@@ -14,10 +14,12 @@
 #include <attr/libattr.h>
 #include <attr/error_context.h>
 
+#include <sys/time.h>
 
 int kysec_file_stat_sync(const char *origFile, const char *destFile)
 {
     struct stat st;         
+    struct timeval tv[2];
     int rc = KYSEC_SUCCESS;
 
     if ((rc = lstat(origFile, &st)) == -1) {
@@ -44,13 +46,25 @@ int kysec_file_stat_sync(const char *origFile, const char *destFile)
         goto out;
     }
 
+    tv[0].tv_sec = st.st_atime;
+    tv[0].tv_usec = st.st_atim.tv_nsec / 1000;
+
+    tv[1].tv_sec = st.st_mtime;
+	tv[1].tv_usec = st.st_mtim.tv_nsec / 1000;
+
+    if ((rc = lutimes(destFile, tv)) == -1) {
+        perror("utimes:");        
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
 out:
     return rc;
 }
 
 int kysec_file_acl_sync(const char *origFile, const char *destFile)
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     acl_t acl = NULL, defaultAcl = NULL;
     
     if ((acl = acl_get_file(origFile, ACL_TYPE_ACCESS)) == NULL) {
@@ -115,7 +129,7 @@ static int is_user_attr(const char *name, struct error_context *ctx)
 
 int kysec_file_attr_sync(const char *origFile, const char *destFile)
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     struct error_context ctx = {error, quote, quote_free};
 
     if ((rc = attr_copy_file(origFile, destFile, is_user_attr, &ctx)) != 0) {

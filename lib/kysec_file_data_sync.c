@@ -11,13 +11,14 @@
 int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 {
     FILE *fpDest = NULL, *fpSig = NULL;
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     rs_result res; 
 
     fpDest = fopen(destFile, "rb");
     fpSig = fopen(sigFile, "wb");
 
     if (!fpDest || !fpSig) {
+        fprintf(stderr, "open error\n");
         rc = KYSEC_ERROR;
         goto out;
     }
@@ -48,7 +49,7 @@ out:
 
 int kysec_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile) 
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     rs_result res;
     rs_signature_t *sumset = NULL;
     FILE *fpSig = NULL, *fpDelta = NULL, *fpOrig = NULL;
@@ -105,7 +106,7 @@ out:
 
 int kysec_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile)
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     rs_result res;
     FILE *fpDest = NULL, *fpOut = NULL, *fpDelta = NULL;
 
@@ -143,7 +144,7 @@ out:
 
 int kysec_file_data_copy(const char *origFile, const char *destFile)
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     FILE *fpOrig = NULL, *fpTmpDest = NULL; 
     int fdTmp = 0;
     int len;
@@ -151,6 +152,7 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     char tmpDestFile[]  = ".tmpFile_XXXXXX";
 
     if ((fdTmp = mkstemp(tmpDestFile)) == -1) {
+        fprintf(stderr, "make stemp error\n");
         rc = KYSEC_ERROR;
         goto out;
     }
@@ -158,18 +160,29 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     fpOrig = fopen(origFile, "rb");
     fpTmpDest = fopen(tmpDestFile, "wb");
     if (!fpOrig || !fpTmpDest) {
+        fprintf(stderr, "open error\n");
         rc = KYSEC_ERROR;
         goto out;
     }
     
     while((len = fread(buf, sizeof(buf[0]), sizeof(buf), fpOrig)) > 0) {
         if (fwrite(buf, sizeof(buf[0]), len, fpTmpDest) != len) {
+            fprintf(stderr, "write error\n");
             rc = KYSEC_ERROR;
             goto out;
         }
     }
 
-    if (!(unlink(destFile) == 0 && rename(tmpDestFile, destFile) == 0)) {
+    if (access(destFile, F_OK) == 0) {
+        if (unlink(destFile) != 0) {
+            fprintf(stderr, "unlink error\n");
+            rc = KYSEC_ERROR;
+            goto out;
+        }
+    }
+
+    if (rename(tmpDestFile, destFile) != 0) {
+        fprintf(stderr, "rename error\n");
         rc = KYSEC_ERROR;
         goto out;
     }
@@ -191,7 +204,7 @@ out:
 
 int kysec_file_data_sync(const char *origFile, const char *destFile)
 {
-    EKYSEC_CODE rc = KYSEC_SUCCESS;
+    int rc = KYSEC_SUCCESS;
     char sigFile[] = ".sigFile_XXXXXX";
     char deltaFile[] = ".deltaFile_XXXXXX";
     char tmpDestFile[] = ".tmpDestFile_XXXXXX";
