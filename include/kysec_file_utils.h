@@ -17,6 +17,8 @@ extern void kysec_make_dir(const char *path, int mode);
 
 extern int kysec_make_file(const char*fileName, int mode);
 
+extern int kysec_file_data_cover(const char *fileName, const char *data, int len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,12 +1,13 @@
 #include "kysec_file_utils.h"
 #include "kysec_file_comdef.h"
 #include <stdio.h>
+#include <string.h>
 
-#define ORIG_FILE "./test/test_dir/orig"
-#define DEST_FILE "./test/test_dir/dest"
-#define SIG_FILE "./test/test_dir/sig"
-#define DELTA_FILE "./test/test_dir/delta"
-#define OUT_FILE "./test/test_dir/out"
+#define ORIG_FILE "test_dir/orig"
+#define DEST_FILE "test_dir/dest"
+#define SIG_FILE "test_dir/sig"
+#define DELTA_FILE "test_dir/delta"
+#define OUT_FILE "test_dir/out"
 
 int test_for_md5() 
 {
@@ -29,6 +30,8 @@ int main(int argc, char const *argv[])
     //kysec_make_dir("/home/zeyu/test/aaa/");
 
     //rc = kysec_make_file("/home/zeyu/test/aaaaa/bbb",0664);
+
+    rc = kysec_file_data_cover(ORIG_FILE, DELTA_FILE, strlen(DELTA_FILE));
     printf("%d\n", rc);
     return 0;
 }

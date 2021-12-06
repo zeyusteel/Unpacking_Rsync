@@ -1,8 +1,6 @@
 #ifndef _KYSEC_FILE_COMDEF_
 #define _KYSEC_FILE_COMDEF_
 
-#include <time.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,19 +11,12 @@ typedef enum EKYSEC_CODE {
     KYSEC_ERROR     =   1
 }EKYSEC_CODE;
 
+#define MINIMUM_SYSTEM_JSON "/etc/kysec/restore/minimum_system.json" 
+#define BACKUP_FILE_DIR "/etc/kysec/restore/backup_file"
 //backup job list
-#define BACKUP_JOB_LIST "/tmp/backup.json"
-#define RESTORE_JOB_LIST "/tmp/restore.json"
+#define BACKUP_JOB_JSON "/etc/kysec/restore/backup.json"
+#define RESTORE_JOB_JSON "/etc/kysec/restore/restore.json"
 
-//FJOB TYPE
-#define KYSEC_BACKUP    0
-#define KYSEC_RESTORE   1
-
-typedef struct FJOB {
-    char *filePath;
-    time_t time;
-    int type;
-}FJOB;
 
 //comdef
 #define BUF_SIZE 1024

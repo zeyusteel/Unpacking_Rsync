@@ -132,3 +132,67 @@ int kysec_is_file_null(const char *fileName)
 	fclose(fp);
 	return val;
 }
+
+int kysec_file_data_cover(const char *fileName, const char *data, int len)
+{
+    int rc = KYSEC_SUCCESS;
+    int fdTmp = 0;
+    char *dupFileName = NULL;
+    char *baseName;
+    char *dir;
+    char tmpName[BUF_SIZE] = {0};
+
+    if (access(fileName, F_OK) != 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    dupFileName = strdup(fileName);
+    baseName = basename(dupFileName);
+    dir = dirname(dupFileName);
+
+    if (strcmp(baseName, ".") == 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (chdir(dir) != 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    memset(tmpName, 0, BUF_SIZE);
+    snprintf(tmpName, BUF_SIZE,".%s_XXXXXX", baseName);
+    tmpName[BUF_SIZE - 1] = '\0';
+
+    if ((fdTmp = mkstemp(tmpName)) == -1) {
+        fprintf(stderr, "make stemp error\n");
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (write(fdTmp, data, len) != len) {
+        fprintf(stderr, "write error\n");
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (unlink(fileName) != 0) {
+        fprintf(stderr, "unlink error\n");
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (rename(tmpName, fileName) != 0) {
+        fprintf(stderr, "rename error\n");
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+out:
+    if (dupFileName) { free(dupFileName); }
+    if (access(tmpName, F_OK) == 0) { unlink(tmpName); }
+    if (fdTmp) { close(fdTmp); }
+
+    return rc;
+}
