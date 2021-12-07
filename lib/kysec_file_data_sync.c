@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <librsync.h>
+#include <libgen.h>
+#include <string.h>
 
 int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 {
@@ -149,22 +151,53 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     int fdTmp = 0;
     int len;
     char buf[BUF_SIZE] = {0};
-    char tmpDestFile[]  = ".tmpFile_XXXXXX";
+    char tmpDestFile[BUF_SIZE] = {0};
+    char cwd[BUF_SIZE] = {0};
+
+    char *dupBase = NULL;
+    char *dupDir = NULL;
+    char *dir;
+    char *base;
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    fpOrig = fopen(origFile, "rb");
+
+    dupBase = strdup(destFile);
+    dupDir = strdup(destFile);
+    base = basename(dupBase);
+    dir = dirname(dupDir);
+
+    if (strcmp(base, ".") == 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (chdir(dir) != 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    memset(tmpDestFile, 0, BUF_SIZE);
+    snprintf(tmpDestFile, BUF_SIZE,".%s_XXXXXX", base);
+    tmpDestFile[BUF_SIZE - 1] = '\0';
 
     if ((fdTmp = mkstemp(tmpDestFile)) == -1) {
         fprintf(stderr, "make stemp error\n");
         rc = KYSEC_ERROR;
         goto out;
-    }
-    
-    fpOrig = fopen(origFile, "rb");
+    } 
+
     fpTmpDest = fopen(tmpDestFile, "wb");
     if (!fpOrig || !fpTmpDest) {
-        fprintf(stderr, "open error\n");
+        fprintf(stderr, "open error orig:%s tmpDest:%s\n",origFile, tmpDestFile);
         rc = KYSEC_ERROR;
         goto out;
     }
-    
+
     while((len = fread(buf, sizeof(buf[0]), sizeof(buf), fpOrig)) > 0) {
         if (fwrite(buf, sizeof(buf[0]), len, fpTmpDest) != len) {
             fprintf(stderr, "write error\n");
@@ -188,26 +221,25 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     }
 
 out:
-    if (fdTmp) {
-        close(fdTmp);
-    }
-    if (fpOrig) {
-        fclose(fpOrig);
-    }
-    if (fpTmpDest) {
-        fclose(fpTmpDest);
-    }
-
+    if (dupBase) { free(dupBase); }
+    if (dupDir) { free(dupDir); }
+    if (fdTmp) { close(fdTmp); }
+    if (fpOrig) { fclose(fpOrig); }
+    if (fpTmpDest) { fclose(fpTmpDest); }
     if (access(tmpDestFile, F_OK) == 0) { unlink(tmpDestFile); }
+    if ((rc = chdir(cwd)) != 0) { rc = KYSEC_ERROR; }
     return rc;
 }
 
 int kysec_file_data_sync(const char *origFile, const char *destFile)
 {
     int rc = KYSEC_SUCCESS;
-    char sigFile[] = ".sigFile_XXXXXX";
-    char deltaFile[] = ".deltaFile_XXXXXX";
-    char tmpDestFile[] = ".tmpDestFile_XXXXXX";
+    char sigFile[BUF_SIZE] = {0};
+    char deltaFile[BUF_SIZE] = {0};
+    char tmpDestFile[BUF_SIZE] = {0};
+
+    char *dupBase = NULL;
+    char *base;
 
     int fdSig = -1, fdDelta = -1, fdTmpDest = -1;
 
@@ -227,6 +259,22 @@ int kysec_file_data_sync(const char *origFile, const char *destFile)
         rc = KYSEC_ERROR;
         goto out;
     }
+
+    dupBase = strdup(destFile);
+    base = basename(dupBase);
+
+    snprintf(sigFile, BUF_SIZE,".%s_sigFile_XXXXXX", base);
+    sigFile[BUF_SIZE - 1] = '\0';
+   
+    snprintf(deltaFile, BUF_SIZE,".%s_deltaFile_XXXXXX", base);
+    deltaFile[BUF_SIZE - 1] = '\0';
+
+    snprintf(tmpDestFile, BUF_SIZE,".%s_tmpDestFile_XXXXXX", base);
+    tmpDestFile[BUF_SIZE - 1] = '\0';
+
+    printf("%s\n", sigFile);
+    printf("%s\n", deltaFile);
+    printf("%s\n", tmpDestFile);
 
     if ((fdSig = mkstemp(sigFile)) == -1) {
         rc = KYSEC_ERROR;
@@ -257,11 +305,18 @@ int kysec_file_data_sync(const char *origFile, const char *destFile)
     }
 
     if (!(unlink(destFile) == 0 && rename(tmpDestFile, destFile) == 0)) {
-        rc = KYSEC_ERROR;
-        goto out;
+        rc = kysec_file_data_copy(tmpDestFile, destFile);
+        if (rc == KYSEC_SUCCESS) { 
+            goto out; 
+        } else {
+            perror("errrrrrr\n");
+            rc = KYSEC_ERROR;
+            goto out;
+        }
     }
 
 out:
+    if (dupBase) { free(dupBase); }
     if (fdSig) { close(fdSig); }
     if (fdDelta) { close(fdDelta); }
     if (fdTmpDest) { close(fdTmpDest); }

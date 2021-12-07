@@ -138,18 +138,26 @@ int kysec_file_data_cover(const char *fileName, const char *data, int len)
     int rc = KYSEC_SUCCESS;
     int fdTmp = 0;
     char *dupFileName = NULL;
+    char *dupDir = NULL;
     char *baseName;
     char *dir;
     char tmpName[BUF_SIZE] = {0};
+    char cwd[BUF_SIZE] = {0};
 
     if (access(fileName, F_OK) != 0) {
         rc = KYSEC_ERROR;
         goto out;
     }
 
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
     dupFileName = strdup(fileName);
+    dupDir = strdup(fileName);
     baseName = basename(dupFileName);
-    dir = dirname(dupFileName);
+    dir = dirname(dupDir);
 
     if (strcmp(baseName, ".") == 0) {
         rc = KYSEC_ERROR;
@@ -191,8 +199,10 @@ int kysec_file_data_cover(const char *fileName, const char *data, int len)
 
 out:
     if (dupFileName) { free(dupFileName); }
+    if (dupDir) { free(dupDir); }
     if (access(tmpName, F_OK) == 0) { unlink(tmpName); }
     if (fdTmp) { close(fdTmp); }
+    if ((rc = chdir(cwd)) != 0) { rc = KYSEC_ERROR; }
 
     return rc;
 }

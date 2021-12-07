@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
 
 
 
-    kysec_del_job_from_jst(jst, &job);
+    rc = kysec_del_job_from_jst(jst, &job);
 
     kysec_job_jst_delete(jst);
     printf("%d\n", rc); 

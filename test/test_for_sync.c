@@ -53,11 +53,12 @@ int main(int argc, char const *argv[])
 {
     int rc = 0;
     //rc = test_for_rsync();
-    //rc = kysec_file_data_sync("/usr/sbin/kylin-log-viewer", "test_dir/kk");
+    rc = kysec_file_data_sync(ORIG_FILE,BACKUP_JOB_JSON);
+    //rc = kysec_file_data_sync(ORIG_FILE,DEST_FILE);
     //rc = kysec_file_data_copy("/usr/sbin/kylin-log-viewer", "test_dir/kk");
     //test_for_md5();
 
-    rc = kysec_file_data_copy(".abc", BACKUP_JOB_JSON);
+    //rc = kysec_file_data_copy(ORIG_FILE, BACKUP_JOB_JSON);
 
     printf("%d\n", rc);
 
