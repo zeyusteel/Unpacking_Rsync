@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <limits.h>
 
 int kysec_file_md5_cmp(unsigned char disgest[16], unsigned char _disgest[16]) 
 {
@@ -143,8 +144,21 @@ int kysec_file_data_cover(const char *fileName, const char *data, int len)
     char *dir;
     char tmpName[BUF_SIZE] = {0};
     char cwd[BUF_SIZE] = {0};
+    char *absPath = NULL;
+
 
     if (access(fileName, F_OK) != 0) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+
+    if (!(absPath = (char*)malloc(PATH_MAX))) {
+        rc = KYSEC_ERROR;
+        goto out;
+    }
+    memset(absPath, 0, PATH_MAX);
+
+    if (!realpath(fileName, absPath)) {
         rc = KYSEC_ERROR;
         goto out;
     }
@@ -164,14 +178,11 @@ int kysec_file_data_cover(const char *fileName, const char *data, int len)
         goto out;
     }
 
-    if (chdir(dir) != 0) {
-        rc = KYSEC_ERROR;
-        goto out;
-    }
+    //切换到目标文件下再创建临时文件，保证rename不会因夸文件系统报错
+    if (chdir(dir) != 0) { rc = KYSEC_ERROR; goto out; }
 
     memset(tmpName, 0, BUF_SIZE);
     snprintf(tmpName, BUF_SIZE,".%s_XXXXXX", baseName);
-    tmpName[BUF_SIZE - 1] = '\0';
 
     if ((fdTmp = mkstemp(tmpName)) == -1) {
         fprintf(stderr, "make stemp error\n");
@@ -185,19 +196,22 @@ int kysec_file_data_cover(const char *fileName, const char *data, int len)
         goto out;
     }
 
-    if (unlink(fileName) != 0) {
+    //避免输入相对路径导致文件无法删除
+    if (unlink(absPath) != 0) {
         fprintf(stderr, "unlink error\n");
         rc = KYSEC_ERROR;
         goto out;
     }
 
-    if (rename(tmpName, fileName) != 0) {
+    if (rename(tmpName, absPath) != 0) {
         fprintf(stderr, "rename error\n");
+        perror("");
         rc = KYSEC_ERROR;
         goto out;
     }
 
 out:
+    if (absPath) { free(absPath); }
     if (dupFileName) { free(dupFileName); }
     if (dupDir) { free(dupDir); }
     if (access(tmpName, F_OK) == 0) { unlink(tmpName); }

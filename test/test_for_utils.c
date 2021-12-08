@@ -31,7 +31,7 @@ int main(int argc, char const *argv[])
 
     //rc = kysec_make_file("/home/zeyu/test/aaaaa/bbb",0664);
 
-    rc = kysec_file_data_cover(ORIG_FILE, DELTA_FILE, strlen(DELTA_FILE));
+    rc = kysec_file_data_cover(argv[1], DELTA_FILE, strlen(DELTA_FILE));
     printf("%d\n", rc);
     return 0;
 }
