@@ -1,5 +1,5 @@
-#ifndef _KYSEC_FILE_RESTROE_
-#define _KYSEC_FILE_RESTROE_
+#ifndef _FILE_RESTROE_
+#define _FILE_RESTROE_
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,4 +11,4 @@ extern void test_func();
 }
 #endif
 
-#endif //_KYSEC_FILE_RESTROE_
+#endif //_FILE_RESTROE_

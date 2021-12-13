@@ -1,2 +1,2 @@
-## FILE RESTORE DEMO FOR KYSEC
+## FILE RESTORE DEMO
 dependence: libtool
