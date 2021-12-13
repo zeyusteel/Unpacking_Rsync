@@ -140,25 +140,12 @@ int demo_file_data_cover(const char *fileName, const char *data, int len)
     int fdTmp = 0;
     char *dupFileName = NULL;
     char *dupDir = NULL;
-    char *baseName;
+    char *base;
     char *dir;
     char tmpName[BUF_SIZE] = {0};
     char cwd[BUF_SIZE] = {0};
-    char *absPath = NULL;
-
 
     if (access(fileName, F_OK) != 0) {
-        rc = ERROR;
-        goto out;
-    }
-
-    if (!(absPath = (char*)malloc(PATH_MAX))) {
-        rc = ERROR;
-        goto out;
-    }
-    memset(absPath, 0, PATH_MAX);
-
-    if (!realpath(fileName, absPath)) {
         rc = ERROR;
         goto out;
     }
@@ -170,10 +157,10 @@ int demo_file_data_cover(const char *fileName, const char *data, int len)
 
     dupFileName = strdup(fileName);
     dupDir = strdup(fileName);
-    baseName = basename(dupFileName);
+    base = basename(dupFileName);
     dir = dirname(dupDir);
 
-    if (strcmp(baseName, ".") == 0) {
+    if (strcmp(base, ".") == 0) {
         rc = ERROR;
         goto out;
     }
@@ -182,7 +169,7 @@ int demo_file_data_cover(const char *fileName, const char *data, int len)
     if (chdir(dir) != 0) { rc = ERROR; goto out; }
 
     memset(tmpName, 0, BUF_SIZE);
-    snprintf(tmpName, BUF_SIZE,".%s_XXXXXX", baseName);
+    snprintf(tmpName, BUF_SIZE,".%s_XXXXXX", base);
 
     if ((fdTmp = mkstemp(tmpName)) == -1) {
         fprintf(stderr, "make stemp error\n");
@@ -197,13 +184,13 @@ int demo_file_data_cover(const char *fileName, const char *data, int len)
     }
 
     //避免输入相对路径导致文件无法删除
-    if (unlink(absPath) != 0) {
+    if (unlink(base) != 0) {
         fprintf(stderr, "unlink error\n");
         rc = ERROR;
         goto out;
     }
 
-    if (rename(tmpName, absPath) != 0) {
+    if (rename(tmpName, base) != 0) {
         fprintf(stderr, "rename error\n");
         perror("");
         rc = ERROR;
@@ -211,12 +198,11 @@ int demo_file_data_cover(const char *fileName, const char *data, int len)
     }
 
 out:
-    if (absPath) { free(absPath); }
     if (dupFileName) { free(dupFileName); }
     if (dupDir) { free(dupDir); }
     if (access(tmpName, F_OK) == 0) { unlink(tmpName); }
     if (fdTmp) { close(fdTmp); }
-    if ((rc = chdir(cwd)) != 0) { rc = ERROR; }
+    if (chdir(cwd) != 0) { rc = ERROR; }
 
     return rc;
 }

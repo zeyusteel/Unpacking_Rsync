@@ -181,7 +181,6 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
     char buf[BUF_SIZE] = {0};
     char tmpDestFile[BUF_SIZE] = {0};
     char cwd[BUF_SIZE] = {0};
-    char *absPath = NULL;
     int destExit = 0;
 
     char *dupBase = NULL;
@@ -196,16 +195,6 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
 
     if (access(destFile, F_OK) == 0) {
         destExit = 1;
-        if (!(absPath = (char*)malloc(PATH_MAX))) {
-            rc = ERROR;
-            goto out;
-        }
-        memset(absPath, 0, PATH_MAX);
-
-        if (!realpath(destFile, absPath)) {
-            rc = ERROR;
-            goto out;
-        }
     }
 
     fpOrig = fopen(origFile, "rb");
@@ -249,7 +238,7 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
     }
 
     if (destExit) {
-        if (unlink(absPath) != 0) {
+        if (unlink(base) != 0) {
             fprintf(stderr, "unlink error\n");
             rc = ERROR;
             goto out;
@@ -265,12 +254,11 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
 out:
     if (dupBase) { free(dupBase); }
     if (dupDir) { free(dupDir); }
-    if (absPath) { free(absPath); }
     if (fdTmp) { close(fdTmp); }
     if (fpOrig) { fclose(fpOrig); }
     if (fpTmpDest) { fclose(fpTmpDest); }
     if (access(tmpDestFile, F_OK) == 0) { unlink(tmpDestFile); }
-    if ((rc = chdir(cwd)) != 0) { rc = ERROR; }
+    if (chdir(cwd) != 0) { rc = ERROR; }
     return rc;
 }
 
@@ -282,11 +270,20 @@ int demo_file_data_sync(const char *origFile, const char *destFile)
     char tmpDestFile[BUF_SIZE] = {0};
 
     char *dupBase = NULL;
+    char *dupDir = NULL;
     char *base;
+    char *dir;
 
-    int fdSig = -1, fdDelta = -1, fdTmpDest = -1;
+    char cwd[BUF_SIZE] = {0};
+    int fdSig = 0, fdDelta = 0, fdTmpDest = 0;
+    FILE *fpDest = NULL, *fpSig = NULL, *fpDelta = NULL, *fpOrig = NULL, *fpTmpDest = NULL;
 
     if (!origFile || !destFile) {
+        rc = ERROR;
+        goto out;
+    }
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
         rc = ERROR;
         goto out;
     }
@@ -304,69 +301,68 @@ int demo_file_data_sync(const char *origFile, const char *destFile)
     }
 
     dupBase = strdup(destFile);
+    dupDir = strdup(destFile);
     base = basename(dupBase);
+    dir = dirname(dupDir);
 
     snprintf(sigFile, BUF_SIZE,".%s_sigFile_XXXXXX", base);
-    sigFile[BUF_SIZE - 1] = '\0';
-   
     snprintf(deltaFile, BUF_SIZE,".%s_deltaFile_XXXXXX", base);
-    deltaFile[BUF_SIZE - 1] = '\0';
-
     snprintf(tmpDestFile, BUF_SIZE,".%s_tmpDestFile_XXXXXX", base);
-    tmpDestFile[BUF_SIZE - 1] = '\0';
 
-    printf("%s\n", sigFile);
-    printf("%s\n", deltaFile);
-    printf("%s\n", tmpDestFile);
+    fpDest = fopen(destFile, "rb");
+    fpOrig = fopen(origFile, "rb");
 
-    if ((fdSig = mkstemp(sigFile)) == -1) {
+    if (chdir(dir) != 0) { rc = ERROR; goto out; }
+ 
+    if ((fdSig = mkstemp(sigFile)) == -1) { rc = ERROR; goto out; }
+    if ((fdDelta = mkstemp(deltaFile)) == -1) { rc = ERROR; goto out; }
+    if ((fdTmpDest = mkstemp(tmpDestFile)) == -1) { rc = ERROR; goto out; }
+
+    fpSig = fopen(sigFile, "wb+");
+
+    if ((rc = demo_rs_sig_fp(fpDest, fpSig, 0)) != SUCCESS) {
         rc = ERROR;
         goto out;
     }
 
-    if ((rc = demo_rs_sig_file(destFile, sigFile, 0)) != SUCCESS) {
-        goto out;
-    }
-
-    if ((fdDelta = mkstemp(deltaFile)) == -1) {
+    fpDelta = fopen(deltaFile, "wb+");
+    fseek(fpSig, 0, SEEK_SET);
+    if ((rc = demo_rs_delta_fp(fpSig, fpDelta, fpOrig)) != SUCCESS) {
         rc = ERROR;
         goto out;
     }
 
-    if ((rc = demo_rs_delta_file(sigFile, deltaFile, origFile)) != SUCCESS) {
-        goto out;
-    }
-
-    if ((fdTmpDest = mkstemp(tmpDestFile)) == -1) {
+    fpTmpDest = fopen(tmpDestFile,"wb");
+    fseek(fpDest, 0, SEEK_SET);
+    fseek(fpDelta, 0, SEEK_SET);
+    if ((rc = demo_rs_patch_fp(fpDest, fpDelta, fpTmpDest)) != SUCCESS) {
         rc = ERROR;
         goto out;
     }
 
-    if ((rc = demo_rs_patch_file(destFile, deltaFile, tmpDestFile)) != SUCCESS) {
+    if (!(unlink(base) == 0 && rename(tmpDestFile, base) == 0)) {
+        perror("unlink error\n");
         rc = ERROR;
         goto out;
-    }
-
-    if (!(unlink(destFile) == 0 && rename(tmpDestFile, destFile) == 0)) {
-        rc = demo_file_data_copy(tmpDestFile, destFile);
-        if (rc == SUCCESS) { 
-            goto out; 
-        } else {
-            perror("errrrrrr\n");
-            rc = ERROR;
-            goto out;
-        }
     }
 
 out:
     if (dupBase) { free(dupBase); }
+    if (dupDir) { free(dupDir); }
+
     if (fdSig) { close(fdSig); }
     if (fdDelta) { close(fdDelta); }
     if (fdTmpDest) { close(fdTmpDest); }
 
+    if (fpDest) { fclose(fpDest); }
+    if (fpDelta) { fclose(fpDelta); }
+    if (fpOrig) { fclose(fpOrig); }
+    if (fpTmpDest) { fclose(fpTmpDest); }
+    if (fpSig) { fclose(fpSig); }
+
     if (access(sigFile, F_OK) == 0) { unlink(sigFile); }
     if (access(deltaFile, F_OK) == 0) { unlink(deltaFile); }
     if (access(tmpDestFile, F_OK) == 0) { unlink(tmpDestFile); }
-
+    if (chdir(cwd) != 0) { rc = ERROR; }
     return rc;
 }
