@@ -9,12 +9,34 @@
 #include <librsync.h>
 #include <libgen.h>
 #include <string.h>
+#include <limits.h>
+
+int demo_rs_sig_fp(FILE *fpDest, FILE *fpSig, int useBlake2) 
+{
+    rs_result res;
+
+    if (!fpDest || !fpSig) {
+        fprintf(stderr, "fp NULL\n");
+        return ERROR;
+    }
+
+    if (useBlake2) {
+        res = rs_sig_file(fpDest, fpSig, RS_DEFAULT_BLOCK_LEN, 0, RS_BLAKE2_SIG_MAGIC, NULL);
+    } else {
+        res = rs_sig_file(fpDest, fpSig, RS_DEFAULT_BLOCK_LEN, 0, RS_MD4_SIG_MAGIC, NULL);
+    }
+
+    if (res != RS_DONE) {
+        fprintf(stderr, "%s\n", rs_strerror(res));
+        return ERROR;
+    }
+    return SUCCESS;
+}
 
 int demo_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 {
     FILE *fpDest = NULL, *fpSig = NULL;
     int rc = SUCCESS;
-    rs_result res; 
 
     fpDest = fopen(destFile, "rb");
     fpSig = fopen(sigFile, "wb");
@@ -25,15 +47,8 @@ int demo_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
         goto out;
     }
 
-    if (useBlake2) {
-        res = rs_sig_file(fpDest, fpSig, RS_DEFAULT_BLOCK_LEN, 0, RS_BLAKE2_SIG_MAGIC, NULL);
-    } else {
-        res = rs_sig_file(fpDest, fpSig, RS_DEFAULT_BLOCK_LEN, 0, RS_MD4_SIG_MAGIC, NULL);
-    }
-
-    if (res != RS_DONE) {
-        printf("%s\n", rs_strerror(res));
-        rc = ERROR;
+    rc = demo_rs_sig_fp(fpDest, fpSig, useBlake2);
+    if (rc != SUCCESS) {
         goto out;
     }
 
@@ -49,11 +64,49 @@ out:
     return rc;
 }
 
-int demo_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile) 
+int demo_rs_delta_fp(FILE *fpSig, FILE *fpDelta, FILE *fpOrig)
 {
     int rc = SUCCESS;
     rs_result res;
     rs_signature_t *sumset = NULL;
+
+    if (!fpSig || !fpDelta || !fpOrig) {
+        fprintf(stderr, "fp null\n");
+        rc = ERROR;
+        goto out;
+    }
+
+    res = rs_loadsig_file(fpSig, &sumset, NULL);
+    if (res != RS_DONE) {
+        fprintf(stderr, "%s\n", rs_strerror(res));
+        rc = ERROR;
+        goto out;
+    }
+
+    res = rs_build_hash_table(sumset);
+    if (res != RS_DONE) {
+        fprintf(stderr, "%s\n", rs_strerror(res));
+        rc = ERROR;
+        goto out;
+    }
+
+    res = rs_delta_file(sumset, fpOrig, fpDelta, NULL);
+    if (res != RS_DONE) {
+        fprintf(stderr, "%s\n", rs_strerror(res));
+        rc = ERROR;
+        goto out;
+    }
+
+out:
+    if (sumset) {
+        rs_free_sumset(sumset);
+    }
+    return rc;
+}
+
+int demo_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile) 
+{
+    int rc = SUCCESS;
     FILE *fpSig = NULL, *fpDelta = NULL, *fpOrig = NULL;
 
     fpSig = fopen(sigFile, "rb");
@@ -65,51 +118,37 @@ int demo_rs_delta_file(const char *sigFile, const char *deltaFile, const char *o
         goto out;
     }
 
-    res = rs_loadsig_file(fpSig, &sumset, NULL);
-    if (res != RS_DONE) {
-        printf("%s\n", rs_strerror(res));
-        rc = ERROR;
-        goto out;
-    }
-
-    res = rs_build_hash_table(sumset);
-    if (res != RS_DONE) {
-        printf("%s\n", rs_strerror(res));
-        rc = ERROR;
-        goto out;
-    }
-
-    res = rs_delta_file(sumset, fpOrig, fpDelta, NULL);
-    if (res != RS_DONE) {
-        printf("%s\n", rs_strerror(res));
-        rc = ERROR;
+    rc = demo_rs_delta_fp(fpSig, fpDelta, fpOrig);
+    if (rc != SUCCESS) {
         goto out;
     }
 
 out:
-    if (fpSig) {
-        fclose(fpSig);
-        fpSig = NULL;
-    }
-    if (fpDelta) {
-        fclose(fpDelta);
-        fpDelta = NULL;
-    }
-    if (fpOrig) {
-        fclose(fpOrig);
-        fpOrig = NULL;
-    }
-    if (sumset) {
-        rs_free_sumset(sumset);
-    }
+    if (fpSig) { fclose(fpSig); }
+    if (fpDelta) { fclose(fpDelta); }
+    if (fpOrig) { fclose(fpOrig); }
 
     return rc;
+}
+
+int demo_rs_patch_fp(FILE *fpDest, FILE *fpDelta, FILE *fpOut)
+{
+    rs_result res;
+    if (!fpDest || !fpOut || !fpDelta) {
+        return ERROR;
+    }
+
+    res = rs_patch_file(fpDest, fpDelta, fpOut, NULL);
+    if (res != RS_DONE) {
+        fprintf(stderr, "%s\n", rs_strerror(res));
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 int demo_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile)
 {
     int rc = SUCCESS;
-    rs_result res;
     FILE *fpDest = NULL, *fpOut = NULL, *fpDelta = NULL;
 
     fpDest = fopen(destFile, "rb");
@@ -121,26 +160,15 @@ int demo_rs_patch_file(const char *destFile, const char *deltaFile, const char *
         goto out;
     }
 
-    res = rs_patch_file(fpDest, fpDelta, fpOut, NULL);
-    if (res != RS_DONE) {
-        printf("%s\n", rs_strerror(res));
-        rc = ERROR;
+    rc = demo_rs_patch_fp(fpDest, fpDelta, fpOut);
+    if (rc != SUCCESS) {
         goto out;
     }
 
 out:
-    if (fpDest) {
-        fclose(fpDest);
-        fpDest = NULL;
-    }
-    if (fpOut) {
-        fclose(fpOut);
-        fpOut = NULL;
-    }
-    if (fpDelta) {
-        fclose(fpDelta);
-        fpDelta = NULL;
-    }
+    if (fpDest) { fclose(fpDest); }
+    if (fpOut) { fclose(fpOut); }
+    if (fpDelta) { fclose(fpDelta); }
     return rc;
 }
 
@@ -153,6 +181,8 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
     char buf[BUF_SIZE] = {0};
     char tmpDestFile[BUF_SIZE] = {0};
     char cwd[BUF_SIZE] = {0};
+    char *absPath = NULL;
+    int destExit = 0;
 
     char *dupBase = NULL;
     char *dupDir = NULL;
@@ -162,6 +192,20 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
         rc = ERROR;
         goto out;
+    }
+
+    if (access(destFile, F_OK) == 0) {
+        destExit = 1;
+        if (!(absPath = (char*)malloc(PATH_MAX))) {
+            rc = ERROR;
+            goto out;
+        }
+        memset(absPath, 0, PATH_MAX);
+
+        if (!realpath(destFile, absPath)) {
+            rc = ERROR;
+            goto out;
+        }
     }
 
     fpOrig = fopen(origFile, "rb");
@@ -181,9 +225,7 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
         goto out;
     }
 
-    memset(tmpDestFile, 0, BUF_SIZE);
     snprintf(tmpDestFile, BUF_SIZE,".%s_XXXXXX", base);
-    tmpDestFile[BUF_SIZE - 1] = '\0';
 
     if ((fdTmp = mkstemp(tmpDestFile)) == -1) {
         fprintf(stderr, "make stemp error\n");
@@ -206,15 +248,15 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
         }
     }
 
-    if (access(destFile, F_OK) == 0) {
-        if (unlink(destFile) != 0) {
+    if (destExit) {
+        if (unlink(absPath) != 0) {
             fprintf(stderr, "unlink error\n");
             rc = ERROR;
             goto out;
         }
     }
 
-    if (rename(tmpDestFile, destFile) != 0) {
+    if (rename(tmpDestFile, base) != 0) {
         fprintf(stderr, "rename error\n");
         rc = ERROR;
         goto out;
@@ -223,6 +265,7 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
 out:
     if (dupBase) { free(dupBase); }
     if (dupDir) { free(dupDir); }
+    if (absPath) { free(absPath); }
     if (fdTmp) { close(fdTmp); }
     if (fpOrig) { fclose(fpOrig); }
     if (fpTmpDest) { fclose(fpTmpDest); }

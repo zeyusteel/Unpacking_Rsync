@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include "cJSON.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,11 +32,18 @@ typedef struct FJOB {
     time_t time;
     int type;
 }FJOB;
+
 //data
+
+extern int demo_rs_sig_fp(FILE *fpDest, FILE *fpSig, int useBlake2);
 
 extern int demo_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2);
 
+extern int demo_rs_delta_fp(FILE *fpSig, FILE *fpDelta, FILE *fpOrig); 
+
 extern int demo_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile); 
+
+extern int demo_rs_patch_fp(FILE *fpDest, FILE *fpDelta, FILE *fpOut);
 
 extern int demo_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile);
 
