@@ -1,5 +1,5 @@
-#include "kysec_file_restore.h"
-#include "kysec_file_comdef.h"
+#include "file_restore.h"
+#include "file_comdef.h"
 
 #include <stdio.h>
 

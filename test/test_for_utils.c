@@ -1,5 +1,5 @@
-#include "kysec_file_utils.h"
-#include "kysec_file_comdef.h"
+#include "file_utils.h"
+#include "file_comdef.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -1,13 +1,13 @@
 AM_CFLAGS = -Wall -I. -std=gnu99 -I../include -D_GNU_SOURCE
 
-lib_LTLIBRARIES = libkysec_file_restore.la 
-libkysec_file_restore_la_SOURCES = \
-                                    kysec_file_data_sync.c \
-                                    kysec_file_utils.c \
-                                    kysec_file_attrs_sync.c \
-                                    kysec_job_proxy.c \
+lib_LTLIBRARIES = libfile_restore.la 
+libfile_restore_la_SOURCES = \
+                                    file_data_sync.c \
+                                    file_utils.c \
+                                    file_attrs_sync.c \
+                                    job_proxy.c \
                                     cJSON.c
-libkysec_file_restore_la_LIBADD = \
+libfile_restore_la_LIBADD = \
                         -lpthread \
                         -lrsync \
                         -lcrypto \

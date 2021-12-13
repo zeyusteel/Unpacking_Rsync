@@ -1,6 +1,6 @@
-#include "kysec_file_restore.h"
-#include "kysec_file_comdef.h"
-#include "kysec_file_utils.h"
+#include "file_restore.h"
+#include "file_comdef.h"
+#include "file_utils.h"
 #include "cJSON.h"
 
 #include <stdio.h>
