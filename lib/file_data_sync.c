@@ -10,10 +10,10 @@
 #include <libgen.h>
 #include <string.h>
 
-int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
+int demo_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 {
     FILE *fpDest = NULL, *fpSig = NULL;
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     rs_result res; 
 
     fpDest = fopen(destFile, "rb");
@@ -21,7 +21,7 @@ int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 
     if (!fpDest || !fpSig) {
         fprintf(stderr, "open error\n");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -33,7 +33,7 @@ int kysec_rs_sig_file(const char *destFile, const char *sigFile, int useBlake2)
 
     if (res != RS_DONE) {
         printf("%s\n", rs_strerror(res));
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -49,9 +49,9 @@ out:
     return rc;
 }
 
-int kysec_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile) 
+int demo_rs_delta_file(const char *sigFile, const char *deltaFile, const char *origFile) 
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     rs_result res;
     rs_signature_t *sumset = NULL;
     FILE *fpSig = NULL, *fpDelta = NULL, *fpOrig = NULL;
@@ -61,28 +61,28 @@ int kysec_rs_delta_file(const char *sigFile, const char *deltaFile, const char *
     fpOrig = fopen(origFile, "rb");
 
     if (!fpSig || !fpDelta || !fpOrig) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     res = rs_loadsig_file(fpSig, &sumset, NULL);
     if (res != RS_DONE) {
         printf("%s\n", rs_strerror(res));
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     res = rs_build_hash_table(sumset);
     if (res != RS_DONE) {
         printf("%s\n", rs_strerror(res));
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     res = rs_delta_file(sumset, fpOrig, fpDelta, NULL);
     if (res != RS_DONE) {
         printf("%s\n", rs_strerror(res));
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -106,9 +106,9 @@ out:
     return rc;
 }
 
-int kysec_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile)
+int demo_rs_patch_file(const char *destFile, const char *deltaFile, const char *outFile)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     rs_result res;
     FILE *fpDest = NULL, *fpOut = NULL, *fpDelta = NULL;
 
@@ -117,14 +117,14 @@ int kysec_rs_patch_file(const char *destFile, const char *deltaFile, const char 
     fpDelta = fopen(deltaFile, "rb");
 
     if (!fpDest || !fpOut || !fpDelta) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     res = rs_patch_file(fpDest, fpDelta, fpOut, NULL);
     if (res != RS_DONE) {
         printf("%s\n", rs_strerror(res));
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -144,9 +144,9 @@ out:
     return rc;
 }
 
-int kysec_file_data_copy(const char *origFile, const char *destFile)
+int demo_file_data_copy(const char *origFile, const char *destFile)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     FILE *fpOrig = NULL, *fpTmpDest = NULL; 
     int fdTmp = 0;
     int len;
@@ -160,7 +160,7 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     char *base;
 
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -172,12 +172,12 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     dir = dirname(dupDir);
 
     if (strcmp(base, ".") == 0) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     if (chdir(dir) != 0) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -187,21 +187,21 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
 
     if ((fdTmp = mkstemp(tmpDestFile)) == -1) {
         fprintf(stderr, "make stemp error\n");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     } 
 
     fpTmpDest = fopen(tmpDestFile, "wb");
     if (!fpOrig || !fpTmpDest) {
         fprintf(stderr, "open error orig:%s tmpDest:%s\n",origFile, tmpDestFile);
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     while((len = fread(buf, sizeof(buf[0]), sizeof(buf), fpOrig)) > 0) {
         if (fwrite(buf, sizeof(buf[0]), len, fpTmpDest) != len) {
             fprintf(stderr, "write error\n");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             goto out;
         }
     }
@@ -209,14 +209,14 @@ int kysec_file_data_copy(const char *origFile, const char *destFile)
     if (access(destFile, F_OK) == 0) {
         if (unlink(destFile) != 0) {
             fprintf(stderr, "unlink error\n");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             goto out;
         }
     }
 
     if (rename(tmpDestFile, destFile) != 0) {
         fprintf(stderr, "rename error\n");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -227,13 +227,13 @@ out:
     if (fpOrig) { fclose(fpOrig); }
     if (fpTmpDest) { fclose(fpTmpDest); }
     if (access(tmpDestFile, F_OK) == 0) { unlink(tmpDestFile); }
-    if ((rc = chdir(cwd)) != 0) { rc = KYSEC_ERROR; }
+    if ((rc = chdir(cwd)) != 0) { rc = ERROR; }
     return rc;
 }
 
-int kysec_file_data_sync(const char *origFile, const char *destFile)
+int demo_file_data_sync(const char *origFile, const char *destFile)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     char sigFile[BUF_SIZE] = {0};
     char deltaFile[BUF_SIZE] = {0};
     char tmpDestFile[BUF_SIZE] = {0};
@@ -244,19 +244,19 @@ int kysec_file_data_sync(const char *origFile, const char *destFile)
     int fdSig = -1, fdDelta = -1, fdTmpDest = -1;
 
     if (!origFile || !destFile) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     if (access(origFile, F_OK) != 0) {
         printf("no such orig file:%s\n", origFile);
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
-    if (access(destFile, F_OK) && kysec_make_file(destFile, 0644) != KYSEC_SUCCESS) {
+    if (access(destFile, F_OK) && demo_make_file(destFile, 0644) != SUCCESS) {
         printf("no such dest file:%s\n", destFile);
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -277,40 +277,40 @@ int kysec_file_data_sync(const char *origFile, const char *destFile)
     printf("%s\n", tmpDestFile);
 
     if ((fdSig = mkstemp(sigFile)) == -1) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
-    if ((rc = kysec_rs_sig_file(destFile, sigFile, 0)) != KYSEC_SUCCESS) {
+    if ((rc = demo_rs_sig_file(destFile, sigFile, 0)) != SUCCESS) {
         goto out;
     }
 
     if ((fdDelta = mkstemp(deltaFile)) == -1) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
-    if ((rc = kysec_rs_delta_file(sigFile, deltaFile, origFile)) != KYSEC_SUCCESS) {
+    if ((rc = demo_rs_delta_file(sigFile, deltaFile, origFile)) != SUCCESS) {
         goto out;
     }
 
     if ((fdTmpDest = mkstemp(tmpDestFile)) == -1) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
-    if ((rc = kysec_rs_patch_file(destFile, deltaFile, tmpDestFile)) != KYSEC_SUCCESS) {
-        rc = KYSEC_ERROR;
+    if ((rc = demo_rs_patch_file(destFile, deltaFile, tmpDestFile)) != SUCCESS) {
+        rc = ERROR;
         goto out;
     }
 
     if (!(unlink(destFile) == 0 && rename(tmpDestFile, destFile) == 0)) {
-        rc = kysec_file_data_copy(tmpDestFile, destFile);
-        if (rc == KYSEC_SUCCESS) { 
+        rc = demo_file_data_copy(tmpDestFile, destFile);
+        if (rc == SUCCESS) { 
             goto out; 
         } else {
             perror("errrrrrr\n");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             goto out;
         }
     }

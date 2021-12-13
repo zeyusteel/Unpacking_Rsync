@@ -9,24 +9,24 @@ int main(int argc, char const *argv[])
     FJOB job;
         
     job.name = "/usr/sbin/kylin";
-    job.type = KYSEC_BACKUP;
+    job.type = BACKUP;
     job.time = time(NULL);
 
-    FJOB_ST *jst = kysec_get_jst_from_file(BACKUP_JOB_JSON);
+    FJOB_ST *jst = demo_get_jst_from_file(BACKUP_JOB_JSON);
     if (!jst) {
         printf("errrrrr");
     }
 
  
-    //rc = kysec_add_job_to_jst(jst, &job);
+    //rc = demo_add_job_to_jst(jst, &job);
 
-    //rc = kysec_add_jst_to_file(jst);
+    //rc = demo_add_jst_to_file(jst);
 
 
 
-    rc = kysec_del_job_from_jst(jst, &job);
+    rc = demo_del_job_from_jst(jst, &job);
 
-    kysec_job_jst_delete(jst);
+    demo_job_jst_delete(jst);
     printf("%d\n", rc); 
     return 0;
 }

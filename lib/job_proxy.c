@@ -17,18 +17,18 @@ const char *szKeyName[] = {
 };
 
 
-FJOB_ST *kysec_job_jst_init()
+FJOB_ST *demo_job_jst_init()
 {
     FJOB_ST *jst = (FJOB_ST*)malloc(sizeof(FJOB_ST));
     if (jst) { 
         memset(jst,0,sizeof(FJOB_ST));
-        jst->type = KYSEC_UNKNOWO;
+        jst->type = UNKNOWO;
         return jst;
     }
     return NULL;
 }
 
-void kysec_job_jst_delete(FJOB_ST *jst)
+void demo_job_jst_delete(FJOB_ST *jst)
 {
     if (jst) {
         if (jst->array) { 
@@ -38,25 +38,25 @@ void kysec_job_jst_delete(FJOB_ST *jst)
     }
 }
 
-int kysec_add_job_to_jst(FJOB_ST *jst ,const FJOB *job)
+int demo_add_job_to_jst(FJOB_ST *jst ,const FJOB *job)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     cJSON *obj = NULL;
 
     if (!jst || !job) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
-    if (jst->type != KYSEC_UNKNOWO && jst->type != job->type) {
+    if (jst->type != UNKNOWO && jst->type != job->type) {
         fprintf(stderr, "type error\n");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
-    } else if (jst->type == KYSEC_UNKNOWO && job->type != KYSEC_UNKNOWO) {
+    } else if (jst->type == UNKNOWO && job->type != UNKNOWO) {
         jst->type = job->type;
-    } else if (job->type == KYSEC_UNKNOWO) {
+    } else if (job->type == UNKNOWO) {
         fprintf(stderr, "type error\n");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
         
@@ -70,24 +70,24 @@ out:
     return rc;
 }
 
-int kysec_add_jst_to_file(const FJOB_ST *jst)
+int demo_add_jst_to_file(const FJOB_ST *jst)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     char *output = NULL;
 
     if (!jst) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     if (jst->array && (output = cJSON_Print(jst->array))) {
-        if (jst->type == KYSEC_BACKUP) {
-            rc = kysec_file_data_cover(BACKUP_JOB_JSON, output, strlen(output));
-        } else if (jst->type == KYSEC_RESTORE) {
-            rc = kysec_file_data_cover(RESTORE_JOB_JSON, output, strlen(output));
+        if (jst->type == BACKUP) {
+            rc = demo_file_data_cover(BACKUP_JOB_JSON, output, strlen(output));
+        } else if (jst->type == RESTORE) {
+            rc = demo_file_data_cover(RESTORE_JOB_JSON, output, strlen(output));
         } else {
             fprintf(stderr, "type error\n");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             goto out;
         }
     }
@@ -98,28 +98,28 @@ out:
 }
 
 
-FJOB_ST *kysec_get_jst_from_file(const char *fileName)
+FJOB_ST *demo_get_jst_from_file(const char *fileName)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     FJOB_ST *jst = NULL;
     FILE *fp = NULL;
     long len;
     char *data = NULL;
 
-    jst = kysec_job_jst_init();
+    jst = demo_job_jst_init();
 
     if (strcmp(fileName, BACKUP_JOB_JSON) == 0) {
-        jst->type = KYSEC_BACKUP;
+        jst->type = BACKUP;
     } else if (strcmp(fileName, RESTORE_JOB_JSON) == 0) {
-        jst->type = KYSEC_RESTORE;
+        jst->type = RESTORE;
     } else {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
     fp = fopen(fileName, "rb");
     if (!fp) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
@@ -129,7 +129,7 @@ FJOB_ST *kysec_get_jst_from_file(const char *fileName)
 
     if (len < 0) {
         fprintf(stderr, "ftell err");
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     } else if (len == 0) {
         goto out;
@@ -146,22 +146,22 @@ FJOB_ST *kysec_get_jst_from_file(const char *fileName)
         cJSON *json = cJSON_Parse(data);
         if (!json) {
             fprintf(stderr, "cjson prase err");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             goto out;
         }
         if (json->type == cJSON_Array) {
             jst->array = json;
         } else {
             fprintf(stderr, "cjson prase err");
-            rc = KYSEC_ERROR;
+            rc = ERROR;
             cJSON_Delete(json);
             goto out;
         }
     }
 
 out:
-    if (rc != KYSEC_SUCCESS) {
-        kysec_job_jst_delete(jst);
+    if (rc != SUCCESS) {
+        demo_job_jst_delete(jst);
         jst = NULL;
     }
     if (fp) { fclose(fp); }
@@ -169,14 +169,14 @@ out:
     return jst;
 }
 
-int kysec_del_job_from_jst(FJOB_ST *jst, const FJOB *job)
+int demo_del_job_from_jst(FJOB_ST *jst, const FJOB *job)
 {
-    int rc = KYSEC_SUCCESS;
+    int rc = SUCCESS;
     int size = 0;
     int del = -1;
 
     if (!jst || !jst->array) {
-        rc = KYSEC_ERROR;
+        rc = ERROR;
         goto out;
     }
 
