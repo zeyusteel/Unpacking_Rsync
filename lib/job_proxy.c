@@ -184,7 +184,7 @@ out:
     return ctx;
 }
 
-int demo_del_job_from_ctx(FJOB_CTX *ctx, const FJOB *job)
+int demo_del_job_from_ctx(FJOB_CTX *ctx, const char *file, callback fun)
 {
     int rc = SUCCESS;
     int size = 0;
@@ -195,23 +195,46 @@ int demo_del_job_from_ctx(FJOB_CTX *ctx, const FJOB *job)
         goto out;
     }
 
-    size = cJSON_GetArraySize(ctx->array);
+    if (!file && !fun) {
+        rc = ERROR;
+        goto out;
+    }
 
-    for (int i = 0; i < size; ++i) {
-        cJSON *obj =  cJSON_GetArrayItem(ctx->array, i);
-        if (obj && obj->type == cJSON_Object) {
-            cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
-            if (item && item->valuestring && strcmp(item->valuestring, job->name) == 0) {
-                del = i;
-                break;
+    if (file) {
+        size = cJSON_GetArraySize(ctx->array);
+
+        for (int i = 0; i < size; ++i) {
+            cJSON *obj =  cJSON_GetArrayItem(ctx->array, i);
+            if (obj && obj->type == cJSON_Object) {
+                cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
+                if (item && item->valuestring && strcmp(item->valuestring, file) == 0) {
+                    del = i;
+                    break;
+                }
+            }
+        }
+
+        if (del != -1) {
+            if (fun && fun((void*)file) != SUCCESS) {
+                return ERROR;
+            }
+            cJSON_DeleteItemFromArray(ctx->array, del);
+        }
+    } else {
+        while(cJSON_GetArraySize(ctx->array)) {
+            cJSON *obj =  cJSON_GetArrayItem(ctx->array, 0);
+            if (cJSON_IsObject(obj)) {
+                cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
+                if (item && item->valuestring && fun) {
+                    rc = fun((void*)item->valuestring);
+                    if (rc != SUCCESS) {
+                        return ERROR;
+                    }
+                }
+                cJSON_DeleteItemFromArray(ctx->array, 0);
             }
         }
     }
-
-    if (del != -1) {
-        cJSON_DeleteItemFromArray(ctx->array, del);
-    }
-
 out:
     return rc;
 }

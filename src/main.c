@@ -1,6 +1,6 @@
 #include "file_comdef.h"
 #include "file_dev.h"
-#include "file_backup.h"
+#include "internal.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +71,7 @@ int main(int argc, char const *argv[])
             flag = FLAG_SINGLE_FILE;
         }
         if (arg) { flag |= arg; }
-        rc = file_backup(file, flag);
+        rc = backup(file, flag);
 
     } else if (type == RESTORE) {
 

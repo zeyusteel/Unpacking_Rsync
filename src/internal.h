@@ -9,7 +9,7 @@ extern "C" {
 #define FLAG_FILE_LIST   (1 << 1)
 #define FLAG_ADD_JOB     (1 << 2)
 #define FLAG_DO_JOB      (1 << 3)
-int file_backup(const char *path, int flag);
+int backup(const char *path, int flag);
 
 #ifdef __cplusplus
 }

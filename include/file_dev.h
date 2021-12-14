@@ -60,7 +60,8 @@ extern int demo_add_ctx_to_file(const FJOB_CTX *ctx);
 
 extern FJOB_CTX *demo_get_ctx_from_file(int type);
 
-extern int demo_del_job_from_ctx(FJOB_CTX *ctx, const FJOB *job);
+typedef int (*callback)(void *);
+extern int demo_del_job_from_ctx(FJOB_CTX *ctx, const char *file, callback fun);
 
 #ifdef __cplusplus
 }
