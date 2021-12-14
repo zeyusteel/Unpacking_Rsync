@@ -1,5 +1,7 @@
 .vscode/
 test/
+!test/*.c
+!test/*.h
 test/test_dir/
 COPYING
 INSTALL

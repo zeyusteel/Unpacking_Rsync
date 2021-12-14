@@ -1,4 +1,4 @@
-#include "file_restore.h"
+#include "file_dev.h"
 #include "file_comdef.h"
 
 #include <time.h>
@@ -12,21 +12,21 @@ int main(int argc, char const *argv[])
     job.type = BACKUP;
     job.time = time(NULL);
 
-    FJOB_ST *jst = demo_get_jst_from_file(BACKUP_JOB_JSON);
-    if (!jst) {
+    FJOB_CTX *ctx = demo_get_ctx_from_file(BACKUP);
+    if (!ctx) {
         printf("errrrrr");
     }
 
- 
-    //rc = demo_add_job_to_jst(jst, &job);
+    //FJOB_CTX *ctx = INIT_CTX();
+    rc = demo_add_job_to_ctx(ctx, &job);
 
-    //rc = demo_add_jst_to_file(jst);
+    rc = demo_add_ctx_to_file(ctx);
 
 
 
-    rc = demo_del_job_from_jst(jst, &job);
+    //rc = demo_del_job_from_ctx(ctx, &job);
 
-    demo_job_jst_delete(jst);
+    demo_job_ctx_delete(ctx);
     printf("%d\n", rc); 
     return 0;
 }

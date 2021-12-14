@@ -1,8 +1,4 @@
 #include <stdio.h>
-#include "file_restore.h"
+#include "file_dev.h"
 
-int main(int argc, char const *argv[])
-{
-    printf("hello world");
-    return 0;
-}
+

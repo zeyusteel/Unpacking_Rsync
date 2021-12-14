@@ -2,7 +2,6 @@
 #define _FILE_RESTROE_
 
 #include <time.h>
-#include "cJSON.h"
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -14,18 +13,7 @@ extern "C" {
 #define BACKUP    0
 #define RESTORE   1
 
-typedef enum EKeyName {
-    EKEY_NAME = 0,
-    EKEY_TIME,
-    EKEY_TYPE
-}EKeyName;
-
-#define FJOB_ARRAY_T cJSON
-
-typedef struct FJOB_ST {
-    FJOB_ARRAY_T *array;
-    int type;
-}FJOB_ST;
+typedef struct FJOB_CTX FJOB_CTX;
 
 typedef struct FJOB {
     char *name;
@@ -60,18 +48,19 @@ extern int demo_file_acl_sync(const char *origFile, const char *destFile);
 extern int demo_file_attr_sync(const char *origFile, const char *destFile);
 
 //job
+extern FJOB_CTX *demo_job_ctx_init(int type);
 
-extern FJOB_ST *demo_job_jst_init();
+#define INIT_CTX() demo_job_ctx_init(UNKNOWO)
 
-extern void demo_job_jst_delete(FJOB_ST *jst);
+extern void demo_job_ctx_delete(FJOB_CTX *ctx);
 
-extern int demo_add_job_to_jst(FJOB_ST *jst ,const FJOB *job);
+extern int demo_add_job_to_ctx(FJOB_CTX *ctx ,const FJOB *job);
 
-extern int demo_add_jst_to_file(const FJOB_ST *jst);
+extern int demo_add_ctx_to_file(const FJOB_CTX *ctx);
 
-extern FJOB_ST *demo_get_jst_from_file(const char *fileName);
+extern FJOB_CTX *demo_get_ctx_from_file(int type);
 
-extern int demo_del_job_from_jst(FJOB_ST *jst, const FJOB *job);
+extern int demo_del_job_from_ctx(FJOB_CTX *ctx, const FJOB *job);
 
 #ifdef __cplusplus
 }

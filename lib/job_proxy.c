@@ -1,4 +1,4 @@
-#include "file_restore.h"
+#include "file_dev.h"
 #include "file_comdef.h"
 #include "file_utils.h"
 #include "cJSON.h"
@@ -9,6 +9,19 @@
 #include <libgen.h>
 #include <unistd.h>
 
+#define FJOB_ARRAY_T cJSON
+
+struct FJOB_CTX {
+    FJOB_ARRAY_T *array;
+    int type;
+};
+
+typedef enum EKeyName {
+    EKEY_NAME = 0,
+    EKEY_TIME,
+    EKEY_TYPE
+}EKeyName;
+
 const char *szKeyName[] = {
     "name",
     "time",
@@ -16,52 +29,51 @@ const char *szKeyName[] = {
     NULL
 };
 
-
-FJOB_ST *demo_job_jst_init()
+FJOB_CTX *demo_job_ctx_init(int type)
 {
-    FJOB_ST *jst = (FJOB_ST*)malloc(sizeof(FJOB_ST));
-    if (jst) { 
-        memset(jst,0,sizeof(FJOB_ST));
-        jst->type = UNKNOWO;
-        return jst;
+    FJOB_CTX *ctx = (FJOB_CTX*)malloc(sizeof(FJOB_CTX));
+    if (ctx) { 
+        memset(ctx,0,sizeof(FJOB_CTX));
+        ctx->type = type;
+        return ctx;
     }
     return NULL;
 }
 
-void demo_job_jst_delete(FJOB_ST *jst)
+void demo_job_ctx_delete(FJOB_CTX *ctx)
 {
-    if (jst) {
-        if (jst->array) { 
-            cJSON_Delete(jst->array); 
+    if (ctx) {
+        if (ctx->array) { 
+            cJSON_Delete(ctx->array); 
         }
-        free(jst);
+        free(ctx);
     }
 }
 
-int demo_add_job_to_jst(FJOB_ST *jst ,const FJOB *job)
+int demo_add_job_to_ctx(FJOB_CTX *ctx ,const FJOB *job)
 {
     int rc = SUCCESS;
     cJSON *obj = NULL;
 
-    if (!jst || !job) {
+    if (!ctx || !job) {
         rc = ERROR;
         goto out;
     }
 
-    if (jst->type != UNKNOWO && jst->type != job->type) {
+    if (ctx->type != UNKNOWO && ctx->type != job->type) {
         fprintf(stderr, "type error\n");
         rc = ERROR;
         goto out;
-    } else if (jst->type == UNKNOWO && job->type != UNKNOWO) {
-        jst->type = job->type;
+    } else if (ctx->type == UNKNOWO && job->type != UNKNOWO) {
+        ctx->type = job->type;
     } else if (job->type == UNKNOWO) {
         fprintf(stderr, "type error\n");
         rc = ERROR;
         goto out;
     }
         
-    if (!jst->array) { jst->array = cJSON_CreateArray(); }
-    cJSON_AddItemToArray(jst->array, obj = cJSON_CreateObject());
+    if (!ctx->array) { ctx->array = cJSON_CreateArray(); }
+    cJSON_AddItemToArray(ctx->array, obj = cJSON_CreateObject());
     cJSON_AddStringToObject(obj, szKeyName[EKEY_NAME], job->name);
     cJSON_AddNumberToObject(obj, szKeyName[EKEY_TIME], job->time);
     cJSON_AddNumberToObject(obj, szKeyName[EKEY_TYPE], job->type);
@@ -70,20 +82,20 @@ out:
     return rc;
 }
 
-int demo_add_jst_to_file(const FJOB_ST *jst)
+int demo_add_ctx_to_file(const FJOB_CTX *ctx)
 {
     int rc = SUCCESS;
     char *output = NULL;
 
-    if (!jst) {
+    if (!ctx) {
         rc = ERROR;
         goto out;
     }
 
-    if (jst->array && (output = cJSON_Print(jst->array))) {
-        if (jst->type == BACKUP) {
+    if (ctx->array && (output = cJSON_Print(ctx->array))) {
+        if (ctx->type == BACKUP) {
             rc = demo_file_data_cover(BACKUP_JOB_JSON, output, strlen(output));
-        } else if (jst->type == RESTORE) {
+        } else if (ctx->type == RESTORE) {
             rc = demo_file_data_cover(RESTORE_JOB_JSON, output, strlen(output));
         } else {
             fprintf(stderr, "type error\n");
@@ -98,20 +110,23 @@ out:
 }
 
 
-FJOB_ST *demo_get_jst_from_file(const char *fileName)
+FJOB_CTX *demo_get_ctx_from_file(int type)
 {
     int rc = SUCCESS;
-    FJOB_ST *jst = NULL;
+    FJOB_CTX *ctx = NULL;
     FILE *fp = NULL;
     long len;
     char *data = NULL;
+    const char *fileName = NULL;
 
-    jst = demo_job_jst_init();
+    ctx = INIT_CTX();
 
-    if (strcmp(fileName, BACKUP_JOB_JSON) == 0) {
-        jst->type = BACKUP;
-    } else if (strcmp(fileName, RESTORE_JOB_JSON) == 0) {
-        jst->type = RESTORE;
+    if (type == BACKUP) {
+        ctx->type = BACKUP;
+        fileName = BACKUP_JOB_JSON;
+    } else if (type == RESTORE) {
+        ctx->type = RESTORE;
+        fileName = RESTORE_JOB_JSON;
     } else {
         rc = ERROR;
         goto out;
@@ -150,7 +165,7 @@ FJOB_ST *demo_get_jst_from_file(const char *fileName)
             goto out;
         }
         if (json->type == cJSON_Array) {
-            jst->array = json;
+            ctx->array = json;
         } else {
             fprintf(stderr, "cjson prase err");
             rc = ERROR;
@@ -161,29 +176,29 @@ FJOB_ST *demo_get_jst_from_file(const char *fileName)
 
 out:
     if (rc != SUCCESS) {
-        demo_job_jst_delete(jst);
-        jst = NULL;
+        demo_job_ctx_delete(ctx);
+        ctx = NULL;
     }
     if (fp) { fclose(fp); }
     if (data) { free(data); }
-    return jst;
+    return ctx;
 }
 
-int demo_del_job_from_jst(FJOB_ST *jst, const FJOB *job)
+int demo_del_job_from_ctx(FJOB_CTX *ctx, const FJOB *job)
 {
     int rc = SUCCESS;
     int size = 0;
     int del = -1;
 
-    if (!jst || !jst->array) {
+    if (!ctx || !ctx->array) {
         rc = ERROR;
         goto out;
     }
 
-    size = cJSON_GetArraySize(jst->array);
+    size = cJSON_GetArraySize(ctx->array);
 
     for (int i = 0; i < size; ++i) {
-        cJSON *obj =  cJSON_GetArrayItem(jst->array, i);
+        cJSON *obj =  cJSON_GetArrayItem(ctx->array, i);
         if (obj && obj->type == cJSON_Object) {
             cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
             if (item && item->valuestring && strcmp(item->valuestring, job->name) == 0) {
@@ -194,7 +209,7 @@ int demo_del_job_from_jst(FJOB_ST *jst, const FJOB *job)
     }
 
     if (del != -1) {
-        cJSON_DeleteItemFromArray(jst->array, del);
+        cJSON_DeleteItemFromArray(ctx->array, del);
     }
 
 out:

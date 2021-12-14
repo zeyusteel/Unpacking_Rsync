@@ -31,7 +31,7 @@ int main(int argc, char const *argv[])
 
     //rc = demo_make_file("/home/zeyu/test/aaaaa/bbb",0664);
 
-    rc = demo_file_data_cover(argv[1], DELTA_FILE, strlen(DELTA_FILE));
+    rc = demo_file_data_cover(argv[1], "wangzeyu", strlen("wangzeyu"));
     printf("%d\n", rc);
     return 0;
 }
