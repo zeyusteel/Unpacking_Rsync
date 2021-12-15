@@ -14,6 +14,7 @@ int main(int argc, char const *argv[])
     const char *file = NULL;
     int type = UNKNOWO;
     int arg = 0;
+    int flag;
 
     const char *shortOpts= "hbrf:ad";
     static struct option longOpts[] = {
@@ -43,10 +44,10 @@ int main(int argc, char const *argv[])
             file = optarg;
             break; 
         case 'a':
-            arg = FLAG_ADD_JOB;
+            arg |= FLAG_ADD_JOB;
             break; 
         case 'd':
-            arg = FLAG_DO_JOB;
+            arg |= FLAG_DO_JOB;
             break; 
         case '?':
             fprintf(stderr, "met ? arg\n");
@@ -66,7 +67,6 @@ int main(int argc, char const *argv[])
     } 
 
     if (type == BACKUP) {
-        int flag;
         if (file) {
             flag = FLAG_SINGLE_FILE;
         }
@@ -74,6 +74,11 @@ int main(int argc, char const *argv[])
         rc = backup(file, flag);
 
     } else if (type == RESTORE) {
+        if (file) {
+            flag = FLAG_SINGLE_FILE;
+        }
+        if (arg) { flag |= arg; }
+        rc = restore(file, flag);
 
     } else {
         fprintf(stderr, "unmet type\n");

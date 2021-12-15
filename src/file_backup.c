@@ -138,19 +138,18 @@ int backup(const char *path, int flag)
     }
 
     if (flag & FLAG_SINGLE_FILE) {
+        
         if (flag & FLAG_ADD_JOB) {
             if ((rc = add_backup_job(path)) != SUCCESS) {
                 goto out;
             }
-        } else if (flag & FLAG_DO_JOB) {
+        } 
+
+        if (flag & FLAG_DO_JOB) {
             if ((rc = do_backup_job(NULL)) != SUCCESS) {
                 goto out;
             }
-        } else {
-            fprintf(stderr, "flag error\n");
-            rc = ERROR;
-            goto out;
-        }
+        } 
 
     } else if (flag & FLAG_FILE_LIST) {
 

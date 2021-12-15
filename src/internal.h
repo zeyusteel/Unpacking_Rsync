@@ -11,6 +11,8 @@ extern "C" {
 #define FLAG_DO_JOB      (1 << 3)
 int backup(const char *path, int flag);
 
+int restore(const char *path, int flag);
+
 #ifdef __cplusplus
 }
 #endif
