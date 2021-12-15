@@ -93,7 +93,7 @@ void demo_make_dir(const char *path, int mode)
 	}
 
 	if(mkdir(path, mode) < 0){
-		printf("mkdir error!\n");
+		fprintf(stderr, "mkdir error!\n");
         return;
 	}
 	return;
@@ -102,7 +102,7 @@ void demo_make_dir(const char *path, int mode)
 int demo_make_file(const char*fileName, int mode)
 {
 	if (access(fileName, F_OK) == 0) {
-        printf("file exit!\n");
+        fprintf(stderr, "file exit!\n");
 		return ERROR;
     }
 

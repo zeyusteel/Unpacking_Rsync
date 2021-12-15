@@ -72,24 +72,36 @@ static int backup_file(void *arg)
     memset(absOrig, 0, PATH_MAX);
     memset(destFile, 0, PATH_MAX);
 
-    printf("%s\n", origFile);
     if (!realpath(origFile, absOrig)) {
-        perror(":");
         rc = ERROR;
         goto out;
     }
 
-    strcat(destFile, BACKUP_FILE_DIR);
-    strcat(destFile, absOrig);
-
+    strncat(destFile, BACKUP_FILE_DIR, strlen(BACKUP_FILE_DIR));
+    strncat(destFile, absOrig, PATH_MAX - 1);
     
-    printf("this is backup file func\n");
-    printf("--%s\n", origFile);
-    printf("--%s\n", destFile);
+    if ((rc = demo_file_data_copy(absOrig, destFile)) != SUCCESS) {
+        fprintf(stderr, "data sync error\n");
+        goto out;
+    } 
+
+    if ((rc = demo_check_hash(absOrig, destFile)) != SUCCESS) {
+        fprintf(stderr, "check hash error\n");
+        goto out;
+    }
+
+    if ((rc = demo_file_attrs_sync(absOrig, destFile)) != SUCCESS) {
+        fprintf(stderr, "attrs sync error\n");
+        goto out;
+    }
 
 out:
+    if (rc != SUCCESS && access(destFile, F_OK) == 0) {
+        unlink(destFile);
+    }
     if (absOrig) { free(absOrig); }
     if (destFile) { free(destFile); }
+
     return rc;
 }
 
@@ -104,17 +116,15 @@ static int do_backup_job(const char *path)
     }
 
     if (path) {
-        printf("do sigle job %s\n", path);
         rc = demo_del_job_from_ctx(ctx, path, backup_file);
     } else {
-        printf("do all job\n");
         rc = demo_del_job_from_ctx(ctx, NULL, backup_file);
     }
-/*
+
     if ((rc = demo_add_ctx_to_file(ctx)) != SUCCESS) {
         goto out;
     }
-*/
+
 out:
     if (ctx) { demo_job_ctx_delete(ctx); }
     return rc;

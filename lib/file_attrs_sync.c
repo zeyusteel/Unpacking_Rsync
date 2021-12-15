@@ -139,3 +139,29 @@ int demo_file_attr_sync(const char *origFile, const char *destFile)
 out:
     return rc;
 }
+
+int demo_file_attrs_sync(const char *origFile, const char *destFile)
+{
+    int rc = SUCCESS;
+
+    rc = demo_file_acl_sync(origFile, destFile);
+    if (rc != SUCCESS) {
+        fprintf(stderr, "sync acl error\n");
+        goto out;
+    }
+
+    rc = demo_file_attr_sync(origFile, destFile);
+    if (rc != SUCCESS) {
+        fprintf(stderr, "sync attr error\n");
+        goto out;
+    }
+
+    rc = demo_file_stat_sync(origFile, destFile);
+    if (rc != SUCCESS) {
+        fprintf(stderr, "sync stat error\n");
+        goto out;
+    }
+
+out:
+    return rc; 
+}

@@ -209,6 +209,10 @@ int demo_file_data_copy(const char *origFile, const char *destFile)
         goto out;
     }
 
+    if (access(dir, F_OK) != 0) {
+        demo_make_dir(dir, 0777);
+    }
+
     if (chdir(dir) != 0) {
         rc = ERROR;
         goto out;
@@ -289,13 +293,13 @@ int demo_file_data_sync(const char *origFile, const char *destFile)
     }
 
     if (access(origFile, F_OK) != 0) {
-        printf("no such orig file:%s\n", origFile);
+        fprintf(stderr, "no such orig file:%s\n", origFile);
         rc = ERROR;
         goto out;
     }
 
     if (access(destFile, F_OK) && demo_make_file(destFile, 0644) != SUCCESS) {
-        printf("no such dest file:%s\n", destFile);
+        fprintf(stderr, "no such dest file:%s\n", destFile);
         rc = ERROR;
         goto out;
     }
