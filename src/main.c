@@ -5,6 +5,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <locale.h>
+
+static void print_type(const char **pType, int type, int flag) 
+{
+    if (type == BACKUP) {
+        if ((flag & FLAG_ADD_JOB) && (flag & FLAG_DO_JOB)) { *pType = "ADD & DO BACKUP"; }
+        else if (flag & FLAG_ADD_JOB) { *pType = "ADD BACKUP"; }
+        else if (flag & FLAG_DO_JOB) { *pType = "DO BACKUP"; }
+    } else if (type == RESTORE) {
+        if ((flag & FLAG_ADD_JOB) && (flag & FLAG_DO_JOB)) { *pType = "ADD & DO RESTORE"; }
+        else if (flag & FLAG_ADD_JOB) { *pType = "ADD RESTORE"; }
+        else if (flag & FLAG_DO_JOB) { *pType = "DO RESTORE"; }
+    }
+}
+
+static void usage()
+{
+    printf("file_restore_demo < -b | -r >  < -a | -d | -a -d > PATH1 PATH2...\n");
+    printf("-b --backup  : backup file\n");
+    printf("-r --restore : restore file\n");
+    printf("-a --add-job : noly add job to config json\n");
+    printf("-d --do-job  : do job which in config json\n");
+    printf("-h --help\n");
+}
 
 int main(int argc, char const *argv[])
 {
@@ -13,26 +37,33 @@ int main(int argc, char const *argv[])
     int longIndex;
     const char *file = NULL;
     int type = UNKNOWO;
-    int arg = 0;
-    int flag;
+    const char *pType = NULL;
+    int flag = FLAG_UNKNOWO;
 
-    const char *shortOpts= "hbrf:ad";
+    static int test;
+    const char *shortOpts= "hbradl";
     static struct option longOpts[] = {
+        {"test", no_argument, &test, 15},
         {"help", no_argument, NULL, 'h'},
         {"backup", no_argument, NULL, 'b'},
         {"restore", no_argument, NULL, 'r'},
-        {"file", required_argument, NULL, 'f'},
         {"add-job", no_argument, NULL, 'a'},
         {"do-job", no_argument, NULL, 'd'},
+        {"file-list", no_argument, NULL, 'l'},
         {0, 0, 0, 0}
     };
+
+    setlocale(LC_ALL, "");
 
     while ((opt = getopt_long(argc, (char * const *)argv, shortOpts, longOpts, &longIndex)) != -1)
     {
         switch (opt)
         {
+        case 0:
+            printf("test %d\n", test);
+            break;
         case 'h':
-            printf("file backup and restore demo\n");
+            usage();
             return EXIT_SUCCESS;
         case 'b':
             type = BACKUP;
@@ -40,53 +71,67 @@ int main(int argc, char const *argv[])
         case 'r':
             type = RESTORE;
             break; 
-        case 'f':
-            file = optarg;
-            break; 
         case 'a':
-            arg |= FLAG_ADD_JOB;
+            flag |= FLAG_ADD_JOB;
             break; 
         case 'd':
-            arg |= FLAG_DO_JOB;
+            flag |= FLAG_DO_JOB;
             break; 
+        case 'l':
+            flag |= FLAG_FILE_LIST;
+            break;
         case '?':
             fprintf(stderr, "met ? arg\n");
-            break;
+            usage();
+            exit(EXIT_FAILURE);
         default:
+            usage();
             exit(EXIT_FAILURE);
         }
     }
 
+    if (optind < 0 || optind > argc || type == UNKNOWO || flag == FLAG_UNKNOWO) {
+        fprintf(stderr, "arg error\n");
+        usage();
+        exit(EXIT_FAILURE);
+    }
+    if (!(flag & FLAG_FILE_LIST)) {
+        flag |= FLAG_SINGLE_FILE;
+    }
+
+    print_type(&pType, type, flag);
+
     if (optind < argc) {
-        fprintf(stderr, "Non-option ARGV-elements: ");
         for (int i = optind; i < argc; i++) {
-            fprintf(stderr, "%s ", argv[i]);
-        }
-        fprintf(stderr, "\n");
-        exit(EXIT_FAILURE);
-    } 
+            file = argv[i];
+            if (type == BACKUP) {
+                rc = backup(file, flag);
+            } else if (type == RESTORE) {
+                rc = restore(file, flag);
+            } 
 
-    if (type == BACKUP) {
-        if (file) {
-            flag = FLAG_SINGLE_FILE;
+            if (rc != SUCCESS) {
+                fprintf(stderr, "%s %s job error\n", file, pType);
+            } else {
+                printf("%s %s job success\n", file, pType);
+            }
         }
-        if (arg) { flag |= arg; }
-        rc = backup(file, flag);
-
-    } else if (type == RESTORE) {
-        if (file) {
-            flag = FLAG_SINGLE_FILE;
+    } else if (optind == argc && (flag & FLAG_DO_JOB) && !(flag & FLAG_ADD_JOB)) {
+        if (type == BACKUP) {
+            rc = backup(NULL, flag);
+        } else if (type == RESTORE) {
+            rc = restore(NULL, flag);
         }
-        if (arg) { flag |= arg; }
-        rc = restore(file, flag);
 
+        if (rc != SUCCESS) {
+            fprintf(stderr, "%s job error\n", pType); 
+        }     
     } else {
-        fprintf(stderr, "unmet type\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "arg error\n"); 
+        usage();
     }
 
     if (rc != SUCCESS) {
-        fprintf(stderr, "error\n");
         exit(EXIT_FAILURE);
     }
 

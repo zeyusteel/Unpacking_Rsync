@@ -121,6 +121,9 @@ static int do_restore_job(const char *path)
         rc = demo_del_job_from_ctx(ctx, NULL, restore_file);
     }
 
+    if (rc != SUCCESS) 
+        goto out;
+
     if ((rc = demo_add_ctx_to_file(ctx)) != SUCCESS) {
         goto out;
     }
@@ -143,20 +146,26 @@ int restore(const char *path, int flag)
 
     if (flag & FLAG_SINGLE_FILE) {
 
-        if (flag & FLAG_ADD_JOB) {
+        if ((flag & FLAG_ADD_JOB) && path) {
             if ((rc = add_restore_job(path)) != SUCCESS) {
                 goto out;
             }
         } 
 
         if (flag & FLAG_DO_JOB) {
-            if ((rc = do_restore_job(NULL)) != SUCCESS) {
-                goto out;
+            if (path) {
+                if ((rc = do_restore_job(path)) != SUCCESS) {
+                    goto out;
+                }
+            } else {
+                if ((rc = do_restore_job(NULL)) != SUCCESS) {
+                    goto out;
+                }
             }
         } 
 
     } else if (flag & FLAG_FILE_LIST) {
-
+        printf("prase file list\n");
     } else {
         fprintf(stderr, "flag error\n");
         rc = ERROR;

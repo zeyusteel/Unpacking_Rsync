@@ -33,7 +33,7 @@ static int add_backup_job(const char *path)
     if (!ctx) {
         ctx = demo_job_ctx_init(BACKUP);
     }
-    if (path) {
+    if (path && access(path, F_OK) == 0) {
         FJOB job = {(char *)path, time(NULL), BACKUP};
         if ((rc = demo_add_job_to_ctx(ctx, &job)) != SUCCESS) {
             goto out;
@@ -101,7 +101,6 @@ out:
     }
     if (absOrig) { free(absOrig); }
     if (destFile) { free(destFile); }
-
     return rc;
 }
 
@@ -121,6 +120,9 @@ static int do_backup_job(const char *path)
         rc = demo_del_job_from_ctx(ctx, NULL, backup_file);
     }
 
+    if (rc != SUCCESS) 
+        goto out;
+
     if ((rc = demo_add_ctx_to_file(ctx)) != SUCCESS) {
         goto out;
     }
@@ -139,20 +141,26 @@ int backup(const char *path, int flag)
 
     if (flag & FLAG_SINGLE_FILE) {
         
-        if (flag & FLAG_ADD_JOB) {
+        if ((flag & FLAG_ADD_JOB) && path) {
             if ((rc = add_backup_job(path)) != SUCCESS) {
                 goto out;
             }
         } 
 
         if (flag & FLAG_DO_JOB) {
-            if ((rc = do_backup_job(NULL)) != SUCCESS) {
-                goto out;
+            if (path) {
+                if ((rc = do_backup_job(path)) != SUCCESS) {
+                    goto out;
+                }
+            } else {
+                if ((rc = do_backup_job(NULL)) != SUCCESS) {
+                    goto out;
+                }
             }
         } 
 
     } else if (flag & FLAG_FILE_LIST) {
-
+        printf("prase file list\n");
     } else {
         fprintf(stderr, "flag error\n");
         rc = ERROR;

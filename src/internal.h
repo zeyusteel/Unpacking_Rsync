@@ -5,10 +5,11 @@
 extern "C" {
 #endif
 
-#define FLAG_SINGLE_FILE (1 << 0)
-#define FLAG_FILE_LIST   (1 << 1)
-#define FLAG_ADD_JOB     (1 << 2)
-#define FLAG_DO_JOB      (1 << 3)
+#define FLAG_UNKNOWO     (1 << 0)
+#define FLAG_SINGLE_FILE (1 << 1)
+#define FLAG_FILE_LIST   (1 << 2)
+#define FLAG_ADD_JOB     (1 << 3)
+#define FLAG_DO_JOB      (1 << 4)
 int backup(const char *path, int flag);
 
 int restore(const char *path, int flag);

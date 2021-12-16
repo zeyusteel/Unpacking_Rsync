@@ -204,7 +204,7 @@ int demo_del_job_from_ctx(FJOB_CTX *ctx, const char *file, callback fun)
         size = cJSON_GetArraySize(ctx->array);
 
         for (int i = 0; i < size; ++i) {
-            cJSON *obj =  cJSON_GetArrayItem(ctx->array, i);
+            cJSON *obj = cJSON_GetArrayItem(ctx->array, i);
             if (obj && obj->type == cJSON_Object) {
                 cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
                 if (item && item->valuestring && strcmp(item->valuestring, file) == 0) {
@@ -219,16 +219,18 @@ int demo_del_job_from_ctx(FJOB_CTX *ctx, const char *file, callback fun)
                 return ERROR;
             }
             cJSON_DeleteItemFromArray(ctx->array, del);
+        } else {
+            return ERROR;
         }
     } else {
         while(cJSON_GetArraySize(ctx->array)) {
-            cJSON *obj =  cJSON_GetArrayItem(ctx->array, 0);
+            cJSON *obj = cJSON_GetArrayItem(ctx->array, 0);
             if (cJSON_IsObject(obj)) {
                 cJSON *item = cJSON_GetObjectItem(obj, szKeyName[EKEY_NAME]);
                 if (item && item->valuestring && fun) {
                     rc = fun((void*)item->valuestring);
                     if (rc != SUCCESS) {
-                        return ERROR;
+                       return ERROR;
                     }
                 }
                 cJSON_DeleteItemFromArray(ctx->array, 0);
